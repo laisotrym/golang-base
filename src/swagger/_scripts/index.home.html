@@ -1,0 +1,44 @@
+<html>
+<head>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<title>SafeWeb API documentation.</title>
+</head>
+<body>
+    <div class="container">
+        <img src="safeweb.svg" alt="logo" height="100"/>
+        <hr />
+        <div class="container" id="index"></div>
+    </div>
+    <script>
+    $.get("data.json", function(data) {
+        for (svc of data) {
+            var s = ''
+            s += '<div class="row">'
+            s += '<div class="col-3"><b>' + svc.name + '</b></div>'
+            s += '<div class="col-9">'
+            var a = []
+            for (k in svc.docs) {
+                a.push('<a href="' + svc.docs[k] + '">' + getName(k) + '</a>')  
+            }
+            s += a.join(' | ')
+            s += '</div></div>'
+            $('#index').append(s)
+        }
+    })
+
+    function getName(s) {
+        switch (s) {
+            case 'dev':
+                return 'development'
+            case 'stag':
+                return 'staging'
+            case 'prod':
+                return 'production'
+            default:
+                return s
+        }
+    }
+    </script>
+</body>
+</html>

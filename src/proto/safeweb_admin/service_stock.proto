@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package app.safeweb.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "safeweb.app/rpc/safeweb_admin";
+
+service StockService {
+    rpc GetAll (GetAllReq) returns (GetAllRes) {
+        option (google.api.http) = {
+          post : "/api/v1/stock/getall"
+          body : "*"
+        };
+    }
+}
+
+message GetAllReq {
+  string username = 1 [json_name = "username"];
+  string token = 2 [json_name = "token"];
+}
+
+message GetAllRes {
+  repeated Stock stock_list = 1 [json_name = "stock_list"];
+  int64 total = 2 [json_name = "total"];
+}
+
+message Stock {
+  int64 id = 1 [json_name = "id"];
+  string ma_ck = 2 [json_name = "ma_ck"];
+  int64 gia_mua = 3 [json_name = "gia_mua"];
+  int64 khoi_luong = 4 [json_name = "khoi_luong"];
+  int64 so_ngay = 5 [json_name = "so_ngay"];
+  int64 tien_lo = 6 [json_name = "tien_lo"];
+  float ty_le_lo = 7 [json_name = "ty_le_lo"];
+  int64 gia_max = 8 [json_name = "gia_max"];
+  int64 lai_max = 9 [json_name = "lai_max"];
+  float ty_le_max = 10 [json_name = "ty_le_max"];
+  int64 gia_hom_nay = 11 [json_name = "gia_hom_nay"];
+  int64 lai_hom_nay = 12 [json_name = "lai_hom_nay"];
+  float ty_le_hom_nay = 13 [json_name = "ty_le_hom_nay"];
+  string trang_thai = 14 [json_name = "trang_thai"];
+}

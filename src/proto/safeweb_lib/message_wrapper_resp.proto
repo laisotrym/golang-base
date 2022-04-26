@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package app.safeweb.v1;
+
+option go_package = "safeweb.app/rpc/safeweb_lib";
+
+option java_multiple_files = true;
+option java_outer_classname = "WrapperRespProto";
+option java_package = "safeweb.app.rpc.safeweb_lib";
+option objc_class_prefix = "RPC";
+
+message WrapperResp {
+    string code = 2;
+    string message = 3;
+    bytes result = 4;
+}

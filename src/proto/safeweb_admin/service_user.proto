@@ -1,0 +1,189 @@
+syntax = "proto3";
+
+package app.safeweb.v1;
+
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+import "safeweb_lib/enum_active_status.proto";
+
+option go_package = "safeweb.app/rpc/safeweb_admin";
+
+// UserApiService
+service UserService {
+    rpc TestName (google.protobuf.StringValue) returns (TestNameRes) {
+        option (google.api.http) = {
+            post: "/api/v1/user/testname"
+            body: "*"
+        };
+    }
+
+    rpc SignUp (SignUpReq) returns (SignUpRes) {
+        option (google.api.http) = {
+            post: "/api/v1/user/signup"
+            body: "*"
+        };
+    }
+    rpc Activate (ActivateUserReq) returns (ActivateUserRes) {
+        option (google.api.http) = {
+            post: "/api/v1/user/activate"
+            body: "*"
+        };
+    }
+
+    rpc ForgotPassword (ForgotPasswordReq) returns (ForgotPasswordRes) {
+        option (google.api.http) = {
+            post: "/api/v1/user/forgotpassword"
+            body: "*"
+        };
+    }
+
+    rpc NewPassword (NewPasswordReq) returns (NewPasswordRes) {
+        option (google.api.http) = {
+            post: "/api/v1/user/newpassword"
+            body: "*"
+        };
+    }
+
+    rpc Add (AddUserReq) returns (User) {
+        option (google.api.http) = {
+            post: "/api/v1/user"
+            body: "*"
+        };
+    }
+    rpc Get (google.protobuf.Int64Value) returns (User) {
+        option (google.api.http) = {
+            get: "/api/v1/user/{value}"
+        };
+    }
+    rpc Update (UpdateUserReq) returns (User) {
+        option (google.api.http) = {
+            patch: "/api/v1/user/{id}"
+            body: "*"
+        };
+    }
+    rpc Delete (google.protobuf.Int64Value) returns (DeleteUserRes) {
+        option (google.api.http) = {
+            delete: "/api/v1/user/{value}"
+        };
+    }
+    rpc List (ListUserReq) returns (ListUserRes) {
+        option (google.api.http) = {
+            get: "/api/v1/users"
+        };
+    }
+}
+
+message AddUserReq {
+    string user_name = 1 [json_name = "userName"];
+    string email = 2 [json_name = "email"];
+    string phone = 3 [json_name = "phone"];
+    string full_name = 4 [json_name = "fullName"];
+    ActiveStatus status = 5 [json_name = "status"];
+    bool is_super = 6 [json_name = "isSuper"];
+    string password = 7 [json_name = "password"];
+    int64 created_by = 8;
+}
+
+
+message AddUserRes {
+    User user = 1;
+}
+
+message UpdateUserReq {
+    int64 id = 1;
+    string user_name = 2 [json_name = "userName"];
+    string email = 3 [json_name = "email"];
+    string phone = 4 [json_name = "phone"];
+    string full_name = 5 [json_name = "fullName"];
+    int64 updated_by = 6;
+}
+
+message DeleteUserRes {
+    bool success = 1 [json_name = "success"];
+    string message = 2 [json_name = "message"];
+}
+
+message ListUserReq {
+    int64 id = 1;
+    int64 page = 2;
+    int64 page_size = 3;
+    string user_name = 4 [json_name = "userName"];
+    string email = 5 [json_name = "email"];
+    string phone = 6 [json_name = "phone"];
+    string full_name = 7 [json_name = "fullName"];
+    ActiveStatus status = 8 [json_name = "status"];
+    bool is_super = 9 [json_name = "isSuper"];
+}
+
+message ListUserRes {
+    repeated User users = 1;
+    int64 total = 2;
+}
+
+// User
+message User {
+    int64 id = 1 [json_name = "id"];
+    string user_name = 2 [json_name = "userName"];
+    string email = 3 [json_name = "email"];
+    string phone = 4 [json_name = "phone"];
+    string full_name = 5 [json_name = "fullName"];
+    string country = 6 [json_name = "country"];
+    string time_zone = 7 [json_name = "timeZone"];
+    ActiveStatus status = 8 [json_name = "status"];
+    bool is_super = 9 [json_name = "isSuper"];
+    bool is_admin = 10 [json_name = "isAmin"];
+    string password = 11 [json_name = "password"];
+    int64 created_by = 12 [json_name = "createdBy"];
+    int64 created_at = 13 [json_name = "createdAt"];
+    int64 updated_by = 14 [json_name = "updatedBy"];
+    int64 updated_at = 15 [json_name = "updatedAt"];
+}
+
+message TestNameRes {
+    bool success = 1 [json_name = "success"];
+    string message = 2 [json_name = "message"];
+}
+
+message SignUpReq {
+    string user_name = 1 [json_name = "userName"];
+    string email = 2 [json_name = "email"];
+    string phone = 3 [json_name = "phone"];
+    string country = 4 [json_name = "country"];
+    string time_zone = 5 [json_name = "timeZone"];
+    string full_name = 6 [json_name = "fullName"];
+    string password = 7 [json_name = "password"];
+    string token = 8 [json_name = "token"];
+}
+
+message SignUpRes {
+    bool success = 1 [json_name = "success"];
+    string message = 2 [json_name = "message"];
+}
+
+message ActivateUserReq {
+    string token = 1 [json_name = "token"];
+}
+
+message ActivateUserRes {
+    bool success = 1 [json_name = "success"];
+    string message = 2 [json_name = "message"];
+}
+
+message ForgotPasswordReq {
+    string email = 1 [json_name = "email"];
+}
+
+message ForgotPasswordRes {
+    bool success = 1 [json_name = "success"];
+    string message = 2 [json_name = "message"];
+}
+
+message NewPasswordReq {
+    string token = 1 [json_name = "token"];
+    string password = 2 [json_name = "password"];
+}
+
+message NewPasswordRes {
+    bool success = 1 [json_name = "success"];
+    string message = 2 [json_name = "message"];
+}

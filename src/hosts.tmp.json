@@ -1,0 +1,16 @@
+{
+    "safeweb_admin": {
+        "local": {
+            "host": "",
+            "base_path": "/"
+        },
+        "dev": {
+            "host": "api-dev.safeweb.app",
+            "base_path": "/"
+        },
+        "prod": {
+            "host": "api-prod.safeweb.app",
+            "base_path": "/"
+        }
+    }
+}

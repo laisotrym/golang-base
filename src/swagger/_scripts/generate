@@ -1,0 +1,162 @@
+#!/bin/bash
+
+set -e
+
+PROJECT_PROTO_FOLDER=proto
+PROJECT_RPC_FOLDER=rpc
+PROJECT_SWAGGER_FOLDER=swagger
+PROJECT_SWAGGER_UI_FOLDER=ui
+PROJECT_SWAGGER_STATIC_FOLDER=static
+DOCUMENT_INDEX=${PROJECT_SWAGGER_FOLDER}/${PROJECT_SWAGGER_UI_FOLDER}/data.json
+
+# # # Generate GO File by Protoful files
+function generate-go-by-proto-files {
+    for group in $(find "$PROJECT_PROTO_FOLDER" -maxdepth 2 -type f -name "*.proto" | sed -E "s/(.*)\/(.*).proto/\1/g" | uniq)
+    do
+        echo "generating for ${group:?}"
+        target=$(echo "$group" | sed -E "s/(.*)${PROJECT_PROTO_FOLDER}\//\1${PROJECT_RPC_FOLDER}\//g")
+        rm -rf "${target:?}/"
+        for proto_file in $(find "$group" -name "*.proto")
+        do
+            echo " --> ${proto_file:?} to ${target:?}"
+            protoc  -I ${PROJECT_PROTO_FOLDER} \
+                    -I .third_party/github.com/grpc-ecosystem/grpc-gateway/ \
+                    -I .third_party/github.com/gogo/googleapis \
+                    -I .third_party/envoyproxy \
+                    -I .third_party/gogoprotobuf \
+                    --gofast_out=logtostderr=true,\
+Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types,\
+Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api,\
+Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types,\
+paths=source_relative:${PROJECT_RPC_FOLDER} \
+--go-grpc_out=paths=source_relative:${PROJECT_RPC_FOLDER} \
+--validate_out=logtostderr=true,paths=source_relative,\
+Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types,\
+Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api,\
+Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types,\
+lang=go:${PROJECT_RPC_FOLDER} \
+--grpc-gateway_out=allow_patch_feature=false,\
+Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types,\
+Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api,\
+Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types,\
+logtostderr=true,paths=source_relative:${PROJECT_RPC_FOLDER} "${proto_file:?}" > gen_rpc.log
+        done
+    done
+}
+
+function generate-swagger-by-proto-files {
+    for group in $(find "$PROJECT_PROTO_FOLDER" -maxdepth 2 -name "*.proto" | sed -E "s/(.*)\/(.*).proto/\1/g" | uniq)
+    do
+        echo "generating for ${group:?}"
+        target="$(echo "${group:?}" | sed -E "s/(.*)${PROJECT_PROTO_FOLDER}\//\1${PROJECT_RPC_FOLDER}\//g")"
+        mkdir -p "${target:?}"
+        find "${group}" -name "*.proto" | xargs protoc -I ${PROJECT_PROTO_FOLDER} \
+            -I .third_party/github.com/grpc-ecosystem/grpc-gateway/ \
+            -I .third_party/github.com/gogo/googleapis \
+            -I .third_party/googleapis \
+            -I .third_party/envoyproxy \
+            -I .third_party/gogoprotobuf \
+            --swagger_out=logtostderr=true,\
+Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,\
+Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types,\
+Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api,\
+Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types,\
+json_names_for_fields=true,allow_merge=true,simple_operation_ids=true:"${target:?}" > gen_rpc.log
+    done
+
+    echo '[]' > ${DOCUMENT_INDEX}
+    doc_index=0
+
+    # shellcheck disable=SC2044
+    for swagger_file in $(find "$PROJECT_RPC_FOLDER" -name "*.swagger.json")
+    do
+        echo "processing for ${swagger_file:?}"
+        sed -i "s/v1\([A-Z]\)/\\1/g" "${swagger_file:?}"
+	    sed -i "s/\/definitions\/gatewayruntimeError/\/definitions\/ErrorResponse/g" "$swagger_file"
+        origin_title=$(jq .info.title "$swagger_file" -r)
+        origin_version=$(jq .info.version "$swagger_file" -r)
+        title=$(echo "$origin_title" | sed -E 's/(.*)\/v[0-9]+\/(.*).proto/\1/g' | sed -E 's/(.*)\/(.*).proto/\1/g')
+        ver=$origin_version
+        doc_path=$(echo "$swagger_file" | sed -E 's/(.*)\/(.*).swagger.json/\1/g' | sed -E "s/(.*)${PROJECT_RPC_FOLDER}\//\1${PROJECT_SWAGGER_FOLDER}\/${PROJECT_SWAGGER_UI_FOLDER}\//g")
+        doc_url=${doc_path:10}
+        doc_base_path=""
+        # shellcheck disable=SC2140
+        pub=0
+        for env in local dev stag prod
+        do
+            base_path=$(jq -r ".$title.$env.base_path" hosts.json)
+            if [[ "$base_path" == "null" || "$base_path" == "/" ]]
+            then
+                base_path=""
+            fi
+            host=$(jq -r ".$title.$env.host" hosts.json)
+            if [[ ("$host" != "null") || ("$env" == "local" && "$host" == "") ]]
+            then
+                if [ "$env" == "local" ]
+                then
+                    doc_base_path="$base_path"
+                    host=""
+                else
+                    host="//$host"
+                fi
+                content=$(jq ".info={"title": \"$title\", "version": \"$ver\", \"x-logo\": {\"url\": \"$doc_base_path/swagger-ui/safeweb.svg\", \"altText\": \"SafeWeb Core Engine\"}}" "$swagger_file") && echo "$content" > "$swagger_file"
+                mkdir -p "$doc_path/$env"
+                content=$(jq ".host=\"$host\"" "$swagger_file") && echo "$content" > "$doc_path/$env/apidocs.swagger.json"
+                content=$(jq ".basePath=\"$base_path\"" "$swagger_file") && echo "$content" > "$doc_path/$env/apidocs.swagger.json"
+                cp ${PROJECT_SWAGGER_FOLDER}/_scripts/${PROJECT_SWAGGER_STATIC_FOLDER}/*.html "$doc_path/$env"
+                content=$(jq ".[$doc_index].docs.${env}=\"$host$base_path/swagger-ui$doc_url/$env\"" ${DOCUMENT_INDEX}); echo "$content" > ${DOCUMENT_INDEX}
+
+                if [ $pub -eq "0" ]
+                then
+                    content=$(jq ".servers += [{\"url\": \"$host$base_path\", \"description\":\"$env\"}]" "$swagger_file") && echo "$content" > "$doc_path/apidocs.swagger.json"
+                    cp ${PROJECT_SWAGGER_FOLDER}/_scripts/index.html "$doc_path"
+                else
+                    content=$(jq ".servers += [{\"url\": \"$host$base_path\", \"description\":\"$env\"}]" "$doc_path/apidocs.swagger.json") && echo "$content" > "$doc_path/apidocs.swagger.json"
+                fi
+                pub=1
+            fi
+        done
+        if [ $pub -eq "1" ]
+        then
+            content=$(jq ".[$doc_index].name=\"$title.$ver\"" ${DOCUMENT_INDEX}); echo "$content" > ${DOCUMENT_INDEX}
+            content=$(jq ".[$doc_index].docs.docs=\"$doc_base_path/swagger-ui$doc_url\"" ${DOCUMENT_INDEX}); echo "$content" > ${DOCUMENT_INDEX}
+            doc_index=$((doc_index+1))
+        fi
+    done
+    cp ${PROJECT_SWAGGER_FOLDER:?}/_scripts/safeweb.svg ${PROJECT_SWAGGER_FOLDER}/${PROJECT_SWAGGER_UI_FOLDER}
+    cp ${PROJECT_SWAGGER_FOLDER:?}/_scripts/index.home.html ${PROJECT_SWAGGER_FOLDER}/${PROJECT_SWAGGER_UI_FOLDER}/index.html
+    cp ${PROJECT_SWAGGER_FOLDER:?}/_scripts/${PROJECT_SWAGGER_STATIC_FOLDER}/*.{css,css.map,js,js.map,png} ${PROJECT_SWAGGER_FOLDER}/${PROJECT_SWAGGER_UI_FOLDER}/${PROJECT_SWAGGER_STATIC_FOLDER}
+}
+
+case $1 in
+    go)
+        generate-go-by-proto-files
+    ;;
+    docs)
+        rm -rf "${PROJECT_SWAGGER_FOLDER:?}/${PROJECT_SWAGGER_UI_FOLDER:?}/"
+        mkdir -p "${PROJECT_SWAGGER_FOLDER:?}/${PROJECT_SWAGGER_UI_FOLDER:?}/${PROJECT_SWAGGER_STATIC_FOLDER:?}/"
+        generate-swagger-by-proto-files
+    ;;
+    *)
+        echo 'unknown command'
+    ;;
+esac

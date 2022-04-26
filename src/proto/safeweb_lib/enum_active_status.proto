@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package app.safeweb.v1;
+
+option go_package = "safeweb.app/rpc/safeweb_lib";
+
+// ActiveStatus
+enum ActiveStatus {
+    // Inactive means 0
+    INACTIVE = 0;
+    // Active means 1
+    ACTIVE = 1;
+}

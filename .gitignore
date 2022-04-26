@@ -1,0 +1,13 @@
+src/reactjs/*
+src/csharp/*
+*go.sum
+*fb_secret.json
+.vscode/*
+src/rpc/*
+*rpc-server.pb.go
+src/swagger/ui/*
+src/swagger/proto/
+*.protoset
+*hosts.json
+*config.yaml
+src/bin/

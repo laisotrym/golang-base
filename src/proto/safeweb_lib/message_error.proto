@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package app.safeweb.v1;
+
+import "google/protobuf/any.proto";
+
+option go_package = "safeweb.app/rpc/safeweb_lib";
+
+option java_multiple_files = true;
+option java_outer_classname = "ErrorProto";
+option java_package = "safeweb.app.rpc.safeweb_lib";
+option objc_class_prefix = "RPC";
+
+// ErrorResponse
+message ErrorResponse {
+    string code = 2 [json_name = "code"];
+    string message = 3 [json_name = "message"];
+}
+
+// Error
+message Error {
+    repeated ErrorMetadata metadatas = 1;
+}
+
+// Error metadata
+message ErrorMetadata {
+    string key = 1;
+    string value = 2;
+}
+
+// Error is the generic error returned from unary RPCs.
+message UnaryError {
+    string error = 1;
+    // This is to make the error more compatible with users that expect errors to be Status objects:
+    // https://github.com/grpc/grpc/blob/master/src/proto/grpc/status/status.proto
+    // It should be the exact same message as the Error field.
+    int32 code = 2;
+    string message = 3;
+    repeated google.protobuf.Any details = 4;
+}
+
+// StreamError is a response type which is returned when
+// streaming rpc returns an error.
+message StreamError {
+    int32 grpc_code = 1;
+    int32 http_code = 2;
+    string message = 3;
+    string http_status = 4;
+    repeated google.protobuf.Any details = 5;
+}

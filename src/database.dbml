@@ -1,0 +1,391 @@
+Table perms as P {
+  id uint [pk, increment]
+  code varchar(50) [not null, unique]
+  name varchar(150)
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+}
+
+Enum active_status {
+  active
+  inactive
+}
+
+Table roles as R {
+  id uint [pk, increment]
+  code varchar(50) [not null, unique]
+  name varchar(150)
+  status active_status [default: 'active']
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+}
+
+Table users as U {
+  id uint [pk, increment]
+  username varchar(25) [not null, unique]
+  email varchar(50) [not null, unique]
+  phone varchar(15) [unique]
+  full_name varchar
+  password_hash blob
+  status active_status [default: 'inactive']
+  is_super boolean [default: '0']
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+}
+
+Table roles_perms {
+  id uint [pk, increment]
+  role_id uint [ref: > R.id]
+  perm_id uint [ref: > P.id]
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+}
+
+Table users_roles {
+  id uint [pk, increment]
+  role_id uint [ref: > R.id]
+  user_id uint [ref: > U.id]
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+}
+
+Table qr_types {
+  id uint [pk, increment]
+  code varchar(20) [not null, unique]
+  name varchar(100)
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+}
+
+Table banks {
+  id uint [pk, increment]
+  code varchar(20) [not null, unique]
+  name varchar(100)
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+}
+
+
+Table merchants as M {
+  id uint [pk, increment]
+  code varchar(20) [not null, unique]
+  name varchar(100)
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+}
+
+Table terminals as T {
+  id uint [pk, increment]
+  merchant_code varchar(20) [not null, ref: > M.code]
+  terminal_id varchar(20) [not null]
+  code varchar(20)
+  name varchar(100)
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+
+  Indexes {
+    (merchant_code, terminal_id) [unique, name:'uk_mer_term']
+  }
+}
+
+Table campaigns as C {
+  id uint [pk, increment]
+  name varchar
+  status int
+  approved_by uint
+  approved_at datetime
+  reason_lock varchar
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+}
+
+
+Enum usage_period {
+  daily
+  weekly
+  monthly
+}
+
+
+Table campaign_details {
+  id uint [pk, increment]
+  campaign_id uint [ref: > C.id]
+  max_budget_amount float8
+  percent_share_of_fee float8
+  max_discount_amount float8
+  qr_type_list varchar(50)
+  usage_max_cust uint
+  usage_period_cust usage_period [not null, default: "monthly"]
+  usage_max_campaign uint
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+}
+
+Table campaign_banks {
+  id uint [pk, increment]
+  campaign_id uint [ref: > C.id]
+  bank_code varchar(20)
+  from_date datetime
+  to_date datetime
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+
+  Indexes {
+    (campaign_id, bank_code) [unique, name:'uk_camp_bank']
+  }
+}
+
+Table campaign_terminals {
+  id uint [pk, increment]
+  campaign_id uint [ref: > C.id]
+  merchant_code varchar(20)
+  terminal_id varchar(20)
+  from_date datetime
+  to_date datetime
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+
+  Indexes {
+    (campaign_id, merchant_code, terminal_id, from_date, to_date) [unique, name:'uk_camp_term']
+  }
+}
+
+Table campaign_customers {
+  id uint [pk, increment]
+  campaign_id uint [ref: > C.id]
+  voucher_code varchar(20)
+  merchant_code varchar(20)
+  terminal_id varchar(20)
+  mobile varchar(15) [not null]
+  duration uint [not null]
+  from_date datetime
+  to_date datetime
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+
+  Indexes {
+    (campaign_id, mobile) [unique, name:'uk_camp_cust']
+  }
+}
+
+Table campaign_vouchers {
+  id uint [pk, increment]
+  campaign_id uint [ref: > C.id]
+  voucher_code varchar(20)
+  from_date date [not null]
+  to_date date [not null]
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+
+  Indexes {
+    (campaign_id, voucher_code) [unique, name:'uk_camp_voucher']
+  }
+}
+
+Table campaign_benefits {
+  id uint [pk, increment]
+  campaign_id uint [ref: > C.id]
+  tnx_min_amount float8
+  discount_percent float8
+  max_discount_amount float8
+  from_date datetime [not null]
+  to_date datetime [not null]
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+
+  Indexes {
+    (campaign_id, from_date, to_date) [unique, name:'uk_camp_ben']
+  }
+}
+
+Enum file_upload_status {
+  init [note: 'Uploaded and save to table success']
+  importing [note: 'Importing data from file to table detail upload']
+  validating [note: 'Validating data on table detail upload']
+  error_dumping [note: 'Finish validate and dump error record from table detail to file']
+  finish [note: 'Finish process file upload']
+}
+
+Table blacklist_terminal_uploads {
+  id uint [pk, increment]
+  upload_file varchar(255) [not null, unique]
+  error_file varchar(255)
+  status file_upload_status [default: 'init']
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+}
+
+Table blacklist_terminal_upload_details {
+  id uint [pk, increment]
+  upload_id uint [ref: > blacklist_terminal_uploads.id]
+  merchant_code varchar
+  terminal_id varchar
+  from_date varchar
+  to_date varchar
+  reason varchar
+  status file_upload_status [default: 'init']
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+}
+
+Table blacklist_terminals {
+  id uint [pk, increment]
+  upload_detail_id uint // [ref: > blacklist_terminal_upload_details.id]
+  merchant_code varchar(20) [not null]
+  terminal_id varchar(20)
+  from_date datetime [not null]
+  to_date datetime
+  reason varchar
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+
+  Indexes {
+    (merchant_code, terminal_id, from_date) [unique, name:'uk_black_term']
+  }
+}
+
+Table blacklist_customer_uploads {
+  id uint [pk, increment]
+  upload_file varchar(255) [not null, unique]
+  error_file varchar(255)
+  status file_upload_status [default: 'init']
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+}
+
+Table blacklist_customer_upload_details {
+  id uint [pk, increment]
+  upload_id uint [ref: > blacklist_customer_uploads.id]
+  mobile varchar
+  from_date varchar
+  to_date varchar
+  reason varchar
+  status file_upload_status [default: 'init']
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+}
+
+Table blacklist_customers {
+  id uint [pk, increment]
+  upload_detail_id uint // [ref: > blacklist_customer_upload_details.id]
+  mobile varchar(15) [not null]
+  from_date datetime [not null]
+  to_date datetime
+  reason varchar
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+
+  Indexes {
+    (mobile, from_date, to_date) [unique, name:'uk_black_cust']
+  }
+}
+
+Enum tnx_usage_status {
+  Hold
+  Confirm
+  UnHold
+  Cancel
+}
+
+Table tnx_usages {
+  id uint [pk, increment]
+  voucher_code varchar(20)
+  bank_code varchar(20) [not null]
+  merchant_code varchar(20) [not null]
+  terminal_id varchar(20) [not null]
+  pay_date datetime
+  mobile varchar(15) [not null]
+  debit_amount float8
+  discount_amount float8
+  real_amount float8
+  tran_payload text
+  status tnx_usage_status [default: 'Hold']
+  created_by uint // [ref: > U.id]
+  created_at datetime [default: `now()`]
+  updated_by uint // [ref: > U.id]
+  updated_at datetime
+  deleted_by uint // [ref: > U.id]
+  deleted_at datetime
+}

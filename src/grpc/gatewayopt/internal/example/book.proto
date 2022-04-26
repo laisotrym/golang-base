@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package bookpb;
+
+option go_package = "bookpb";
+
+message Book {
+    int32 id = 1;
+    string name = 2;
+    int32 author_id = 3;
+}
+
+message User {
+    int32 id = 1;
+    string name = 2;
+}
+
+message ListBooksResponse {
+    repeated Book books = 1;
+
+}
